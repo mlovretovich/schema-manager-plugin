@@ -22,8 +22,7 @@ object Migration {
   }
 
   def apply(config: Seq[DataSource]) =  {
-	val ds = config.map( d => Seq(d.copy(schema="public"), d)).flatMap{ case(d) => d }
-	new MigrationRunner(ds)
+	new MigrationRunner(config)
   }
 
   private implicit class FlywayOps(val flyway: Flyway) extends AnyVal {

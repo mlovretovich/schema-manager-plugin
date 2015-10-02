@@ -6,14 +6,14 @@ import com.typesafe.config.{Config, ConfigFactory}
 import Def.Initialize
 
 
-case class DataSource(host:String, databaseName: String, user: String, password:String, schema: String) {
-  override def toString: String = host + ":" + databaseName + ":" + user + ":" + password + ":" + schema
+case class DataSource(name:String, host:String, databaseName: String, user: String, password:String, schema: String) {
+//  override def toString: String = host + ":" + databaseName + ":" + user + ":" + password + ":" + schema
   def toUrl = s"jdbc:postgresql://$host/$databaseName"
 }
 
-object  DataSource {
+object  MigrationConfig {
 
-  def apply(directory: File, dsKeys: Seq[String]): Seq[DataSource] = {
+  def apply(directory: File, schemaMap: Map[String,Seq[String]] = Map(), dependencies: Seq[String]): Seq[DataSource] = {
 
 	val configFile = System.getProperty("config.file", sys.env.getOrElse("CONFIG_FILE", ""))
 	val scalaEnv = System.getProperty("scala.env", sys.env.getOrElse("SCALA_ENV", "local"))
@@ -23,15 +23,21 @@ object  DataSource {
 	  .withFallback(ConfigFactory.parseFile(directory / "application.conf"))
 	  .withFallback(ConfigFactory.defaultReference)
 
-	dsKeys map ( k =>
-	  DataSource(
-		ConfigKey(config, k).host,
-		ConfigKey(config, k).databaseName,
-		ConfigKey(config, k).user,
-		ConfigKey(config, k).password,
-		ConfigKey(config, k).schema
-	  )
-	)
+	(addSchemaDependencies(schemaMap, dependencies) map { case (key, value) =>
+		value map { schema =>
+	  		DataSource(
+	  		  key,
+	  		  ConfigKey(config, key).host,
+	  		  ConfigKey(config, key).databaseName,
+	  		  ConfigKey(config, key).user,
+	  		  ConfigKey(config, key).password,
+	  		  schema
+	  		)
+	  	  } }).flatMap{ case(d) => d }.toSeq
+  }
+
+  private def addSchemaDependencies(schemaMap: Map[String,Seq[String]], dependencies: Seq[String] ): Map[String,Seq[String]] = {
+	schemaMap map { case (key, value) =>  key -> (dependencies ++ value).toSet.toSeq }
   }
 
   case class ConfigKey(cfg: Config, path: String) {

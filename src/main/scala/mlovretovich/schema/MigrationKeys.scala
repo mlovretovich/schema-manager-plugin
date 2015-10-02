@@ -8,12 +8,10 @@ trait MigrationKeys {
 
   lazy val migrate = taskKey[Unit]("Migrates the schema to the latest version'")
   lazy val info = taskKey[Unit]("Displays info about the current state of the schema.")
+  lazy val schemaManagerConnections = settingKey[Map[String,Seq[String]]]("Map of the schemas and connections to manage. $schema->$connection")
   lazy val migrationConfigFileName = settingKey[File]("migrate")
   lazy val migrationConfig = settingKey[Seq[DataSource]]("data source to use when tests are triggered")
-  lazy val configPrefix = settingKey[String]("the config prefix for the migration datasource")
-  lazy val configKeys = settingKey[Seq[String]]("config keys for migration")
-  lazy val migrationConfigKeys = settingKey[Seq[String]]("config keys for migration")
-  lazy val SchemasToMigrate = settingKey[Seq[DataSource]]("")
+  lazy val schemaDependencies = settingKey[Seq[String]]("Schemas automatically prepended to the list of schemas managed per connection")
 }
 
 object MigrationKeys extends MigrationKeys

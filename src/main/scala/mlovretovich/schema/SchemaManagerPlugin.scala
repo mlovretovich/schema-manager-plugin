@@ -17,8 +17,14 @@ object SchemaManagerPlugin extends AutoPlugin {
   import autoImport._
 
   lazy val testMigrationSettings = Seq(
-	migrationConfigFileName in Test := (resourceDirectory in Test).value, //map {(v) => v},
-	migrationConfig in Test  := DataSource((migrationConfigFileName in Test).value, configKeys.value),
+
+	schemaDependencies := Seq("public","audit"),
+	migrationConfigFileName in Test := (resourceDirectory in Test).value,
+	migrationConfig  := MigrationConfig(
+	  migrationConfigFileName.value,
+	  schemaManagerConnections.value,
+	  schemaDependencies.value
+	),
 	migrate <<= (migrationConfig, fullClasspath in Runtime, streams) map {
 	  (m,c,s) => withPrepared(c,s){
 		Migration(m).migrate
@@ -33,8 +39,14 @@ object SchemaManagerPlugin extends AutoPlugin {
   )
 
   lazy val defaultMigrationSettings: Seq[Def.Setting[_]] = Seq(
+
+	schemaDependencies := Seq("public","audit"),
 	migrationConfigFileName := (resourceDirectory in Compile).value,
-	migrationConfig  := DataSource(migrationConfigFileName.value, configKeys.value),
+	migrationConfig  := MigrationConfig(
+	  migrationConfigFileName.value,
+	  schemaManagerConnections.value,
+	  schemaDependencies.value
+	),
 	migrate <<= (migrationConfig, fullClasspath in Runtime, streams) map {
 	  (m,c,s) => withPrepared(c,s){
 		Migration(m).migrate
